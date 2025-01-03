@@ -1,0 +1,117 @@
+body, html {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #1e1e1e; /* Dark background */
+    color: #e0e0e0; /* Light text color */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #2a2a2a; /* Slightly lighter background for the container */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+}
+
+.chat-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 20px;
+    background-color: #333333; /* Darker header */
+    border-bottom: 1px solid #444; /* Darker border */
+}
+
+.clear-history-btn {
+    background-color: transparent;
+    color: #1a73e8; /* Bright blue for emphasis */
+    border: none;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border-radius: 4px;
+}
+
+.clear-history-btn:hover {
+    background-color: #3a3a3a; /* Button hover effect */
+}
+
+.chat-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.message {
+    max-width: 80%;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 18px;
+    line-height: 1.4;
+}
+
+.user-message {
+    align-self: flex-end;
+    background-color: #0d47a1; /* Deep blue for user message */
+    color: #e0f7fa; /* Light cyan text for readability */
+}
+
+.bot-message {
+    align-self: flex-start;
+    background-color: #444; /* Grey background for bot */
+    color: #b0bec5; /* Muted blue-grey text */
+}
+
+.input-area {
+    display: flex;
+    padding: 20px;
+    border-top: 1px solid #444; /* Border to separate input */
+}
+
+#query-input {
+    flex-grow: 1;
+    padding: 10px 15px;
+    font-size: 16px;
+    border: 1px solid #555; /* Darker border for input */
+    background-color: #333333; /* Dark input box */
+    color: #e0e0e0; /* Light text in input */
+    border-radius: 24px;
+    margin-right: 10px;
+}
+
+.send-btn {
+    background-color: #1a73e8; /* Bright blue for contrast */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.send-btn:hover {
+    background-color: #155db1; /* Darker blue on hover */
+}
+
+.loader {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1a73e8;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

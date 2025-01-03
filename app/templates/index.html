@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Query System</title>
+    <link rel="stylesheet" href= "\static\styles.css"> <!-- Updated path to serve static CSS -->
+</head>
+<body>
+    <div class="container">
+        <div class="chat-header">
+            <button id="clear-history-btn" class="clear-history-btn">Clear History</button>
+        </div>
+        <div class="chat-area" id="chat-area"></div>
+        <div class="input-area">
+            <input type="text" id="query-input" placeholder="Type your message here..." />
+            <button id="send-btn" class="send-btn">Send</button>
+            <div class="loader" id="loader"></div>
+        </div>
+    </div>
+
+    <script>
+        const chatArea = document.getElementById('chat-area');
+        const queryInput = document.getElementById('query-input');
+        const sendBtn = document.getElementById('send-btn');
+        const loader = document.getElementById('loader');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+        let conversationHistory = JSON.parse(localStorage.getItem('conversationHistory')) || [];
+
+        function updateChatDisplay() {
+            chatArea.innerHTML = '';
+            conversationHistory.forEach(item => {
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user-message';
+                userMessage.textContent = item.query;
+                chatArea.appendChild(userMessage);
+
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot-message';
+                botMessage.textContent = item.answer;
+                chatArea.appendChild(botMessage);
+            });
+        }
+
+        updateChatDisplay();
+
+        async function sendQuery() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            loader.style.display = 'block';
+            sendBtn.disabled = true;
+
+            try {
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user-message';
+                userMessage.textContent = query;
+                chatArea.insertBefore(userMessage, chatArea.firstChild);
+
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: query }),
+                });
+                
+                const data = await response.json();
+
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot-message';
+                botMessage.textContent = data.answer;
+                chatArea.insertBefore(botMessage, chatArea.firstChild);
+
+                conversationHistory.push({ query, answer: data.answer });
+                if (conversationHistory.length > 50) {
+                    conversationHistory = conversationHistory.slice(-50);
+                }
+                localStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request. Please try again.');
+            } finally {
+                loader.style.display = 'none';
+                sendBtn.disabled = false;
+                queryInput.value = '';
+            }
+        }
+
+        function clearHistory() {
+            conversationHistory = [];
+            localStorage.removeItem('conversationHistory');
+            updateChatDisplay();
+        }
+
+        sendBtn.addEventListener('click', sendQuery);
+        queryInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendQuery();
+            }
+        });
+        clearHistoryBtn.addEventListener('click', clearHistory);
+    </script>
+</body>
+</html> 

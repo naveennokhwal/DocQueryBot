@@ -64,7 +64,7 @@ class Agent:
                 return response
         elif result[0:5] == "False":
             rag_gemini_system = RAGGemini(
-                data_dir=r"C:\Learning\Machine-Learning\Deep_Learning_WorkSpace\projects\chatbot\data\iesc111.pdf", 
+                data_dir=r"C:\Learning\Machine-Learning\Deep_Learning_WorkSpace\projects\chatbot\data\file\example.pdf", 
                 vector_db_dir=r"C:\Learning\Machine-Learning\Deep_Learning_WorkSpace\projects\chatbot\data\vector_database", 
                 model_name="gemini-1.5-flash", 
                 embedding_model="models/embedding-001"

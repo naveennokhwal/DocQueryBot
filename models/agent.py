@@ -1,79 +1,89 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv()  # Load environment variables from .env file
-api_key = os.getenv('GEMINI_API_KEY')
+load_dotenv()  # Load environment variables
 
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from .rag import RAGGemini
 
-
 class Agent:
-    def __init__(self, model_name="gemini-1.5-flash"):
+    def __init__(self, pdf_path=None, model_name="gemini-1.5-flash", api_key=None):
         self.model_name = model_name
+        self.pdf_path = pdf_path
+        self.api_key = api_key
         self.model = None
         self.load_model()
 
     def load_model(self):
         """Load the Gemini model for text generation."""
-        self.model = ChatGoogleGenerativeAI(model=self.model_name)
+        try:
+            # Use explicitly provided API key
+            if self.api_key:
+                self.model = ChatGoogleGenerativeAI(
+                    model=self.model_name, 
+                    google_api_key=self.api_key
+                )
+            else:
+                self.model = ChatGoogleGenerativeAI(model=self.model_name)
+        except Exception as e:
+            raise ValueError(f"Failed to load model: {e}")
         return self.model
 
-    def need_to_call(self):
+    def need_to_call(self, question):
+        """Determine if the question requires RAG or conversation handling."""
         prompt = PromptTemplate(
+            template='''
+                Classify the question type:
+                - If it's a conversational or general query, return "CONVERSATION"
+                - If it requires technical or specific information from the document, return "RAG"
+                - If unsure, return "RAG"
+                Question: {question}
+                Classification:
+            ''',
+            input_variables=['question']
+        )
+
+        chain = prompt | self.model | StrOutputParser()
+        return chain.invoke({"question": question})
+    
+    def greeting(self, question):
+        greet_prompt = PromptTemplate(
             template= '''
-                    You are an intelligent assistant. Use the following question to decide whether it is a conversation sentence or not.
-                    if the sentence is a conversation then return "True" else "False". If you don't know the answer, return "False". Also if user ask about 
-                    technical information then also you return "False".
+                    You’re an intelligent assistant. Write a small greeting message in response to the given sentence.
+                    and ask if they need any help. message should be concise.
                     Question: {question}
                     Answer: 
                     ''',
             input_variables= ['question']
         )
 
-        chain = prompt | self.model | StrOutputParser()
-        return chain
-    
-    def greeting(self):
-        prompt = PromptTemplate(
-            template= '''
-                    You’re an intelligent assistant. Given a sentence, determine if it's a greeting. 
-                    If it is, respond with a greeting and ask how you can help. If it's not a greeting, 
-                    or if the question is technical, return "False".
-                    Question: {question}
-                    Answer: 
-                    ''',
-            input_variables= ['question']
-        )
-
-        chain = prompt | self.model | StrOutputParser()
-        return chain 
-    
+        chain = greet_prompt | self.model | StrOutputParser()
+        return chain.invoke({"question": question})
+     
     def get_answer(self, question):
-        """Generate an answer based on the given question using the RAG chain."""
-        conversation_chain = self.need_to_call()
-        result = conversation_chain.invoke({"question": question})
-        if  result[0:4] == "True":
-            greeting_chain = self.greeting()
-            response = greeting_chain.invoke({"question": question})
-            if response[0:5] == "False":
-                return "I’m a RAG system designed to provide information based on my existing database. Feel free to ask me questions about Chapter 11: Sound."
-            else:
-                return response
-        elif result[0:5] == "False":
-            rag_gemini_system = RAGGemini(
-                data_dir=r"C:\Learning\Machine-Learning\Deep_Learning_WorkSpace\projects\chatbot\data\file\example.pdf", 
-                vector_db_dir=r"C:\Learning\Machine-Learning\Deep_Learning_WorkSpace\projects\chatbot\data\vector_database", 
-                model_name="gemini-1.5-flash", 
-                embedding_model="models/embedding-001"
-            )
-            
-            rag_gemini_system.load_vector_database()
-            rag_gemini_system.load_model()
+        """Generate an answer based on the question type."""
+        call_type = self.need_to_call(question)
 
-            rag_chain = rag_gemini_system.create_rag_chain()
-            return rag_chain.invoke(question)
-        else:
-            return "Please make sure your query is correct!!!"
+        if call_type == "CONVERSATION":
+            return self.greeting(question)
+        
+        if not self.pdf_path:
+            return "Please upload a PDF first."
+
+        # Initialize RAG system with the uploaded PDF and API key
+        rag_system = RAGGemini(
+            data_dir=self.pdf_path, 
+            vector_db_dir=os.path.join(os.path.dirname(self.pdf_path), "vector_db"),
+            model_name=self.model_name,
+            api_key=self.api_key
+        )
+        
+        rag_system.load_documents()
+        rag_system.split_documents()
+        rag_system.load_vector_database()
+        rag_system.load_model()
+
+        rag_chain = rag_system.create_rag_chain()
+        return rag_chain.invoke(question)

@@ -1,8 +1,7 @@
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables from .env file
-api_key = os.getenv('GEMINI_API_KEY')
+load_dotenv()
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -13,61 +12,70 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import PromptTemplate
 
 class RAGGemini:
-    def __init__(self, data_dir, vector_db_dir, model_name="gemini-1.5-flash", embedding_model="models/embedding-001"):
+    def __init__(self, data_dir, vector_db_dir, model_name="gemini-1.5-flash", 
+                 embedding_model="models/embedding-001", api_key=None):
         self.data_dir = data_dir
         self.vector_db_dir = vector_db_dir
         self.model_name = model_name
         self.embedding_model = embedding_model
+        self.api_key = api_key
+        
         self.documents = []
         self.splits = []
         self.vectorstore = None
         self.model = None
 
-        self.load_documents()
-        self.split_documents()
-
     def load_documents(self):
+        """Load PDF documents."""
         loader = PyPDFLoader(self.data_dir)
-        docs = loader.load()
-        self.documents.extend(docs)
+        self.documents = loader.load()
         return self.documents
 
     def split_documents(self, chunk_size=1000, chunk_overlap=200):
-        """Split the loaded documents into chunks for vector embedding."""
-        if not self.documents:
-            raise ValueError("No documents found. Load documents first.")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        """Split documents into manageable chunks."""
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, 
+            chunk_overlap=chunk_overlap
+        )
         self.splits = text_splitter.split_documents(self.documents)
         return self.splits
 
     def load_vector_database(self):
-        """Create or load a vector database from document splits."""
-        if not self.splits:
-            raise ValueError("No document splits found. Split documents first.")
-        embeddings = GoogleGenerativeAIEmbeddings(model=self.embedding_model)
-        self.vectorstore = Chroma.from_documents(documents=self.splits, embedding=embeddings, persist_directory=self.vector_db_dir)
+        """Create vector database from document splits."""
+        # Use API key for embeddings if provided
+        embeddings = GoogleGenerativeAIEmbeddings(
+            model=self.embedding_model,
+            google_api_key=self.api_key if self.api_key else None
+        )
+        self.vectorstore = Chroma.from_documents(
+            documents=self.splits, 
+            embedding=embeddings, 
+            persist_directory=self.vector_db_dir
+        )
         return self.vectorstore
 
     def load_model(self):
-        """Load the Gemini model for text generation."""
-        self.model = ChatGoogleGenerativeAI(model=self.model_name)
+        """Load Gemini model."""
+        # Use API key if provided
+        self.model = ChatGoogleGenerativeAI(
+            model=self.model_name,
+            google_api_key=self.api_key if self.api_key else None
+        )
         return self.model
 
     def create_rag_chain(self):
-        """Create and return the RAG chain for querying."""
-        if not self.vectorstore or not self.model:
-            raise ValueError("Ensure that the vectorstore and model are loaded before creating the RAG chain.")
-        
+        """Create RAG query chain."""
         retriever = self.vectorstore.as_retriever()
         prompt = PromptTemplate(
             template='''
-                    You are an assistant for question-answering tasks. Use the following pieces of retrieved context to
-                    answer the question.If you don't know the answer, just say that you don't know. Use three sentences
-                    maximum and keep the answer concise.
-                    Question: {question} 
-                    Context: {context} 
-                    Answer:
-                    '''
+            Use the provided context to answer the question precisely. 
+            If the context doesn't contain the answer, say "I cannot find the answer in the document."
+            
+            Context: {context}
+            Question: {question}
+            Answer:
+            ''',
+            input_variables=['context', 'question']
         )
 
         rag_chain = (
@@ -79,6 +87,5 @@ class RAGGemini:
         return rag_chain
 
     def format_docs(self, docs):
-        """Helper method to format the retrieved documents for RAG."""
+        """Format retrieved documents."""
         return "\n\n".join(doc.page_content for doc in docs)
-        

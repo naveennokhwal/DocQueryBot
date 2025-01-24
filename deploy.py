@@ -1,9 +1,10 @@
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 import os
-# import sys
 import tempfile
 import streamlit as st
-
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'models')))
 from models.agent import Agent
 
 # Add the sibling folder to sys.path

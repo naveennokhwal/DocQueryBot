@@ -18,7 +18,7 @@ class PDFChatApp:
         self.current_pdf_path = None
         
         # Streamlit page configuration
-        st.set_page_config(page_title="PDF Q&A Chatbot", page_icon=":books:")
+        st.set_page_config(page_title="DocQueryBot", page_icon=":books:")
         
     def run(self):
         st.title("DocQueryBot")

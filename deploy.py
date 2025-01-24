@@ -16,9 +16,6 @@ TEMP_PDF_DIR = tempfile.mkdtemp()
 CURRENT_PDF_PATH = None
 CURRENT_API_KEY = None
 
-# Default API Key (from .env file)
-DEFAULT_API_KEY = os.getenv("GOOGLE_API_KEY")
-
 # Streamlit app setup
 st.set_page_config(page_title="DocQueryBot", layout="wide")
 st.markdown("""

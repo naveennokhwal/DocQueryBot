@@ -6,7 +6,7 @@ load_dotenv()  # Load environment variables
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
-from .rag import RAGGemini
+from models.rag import RAGGemini
 
 class Agent:
     def __init__(self, pdf_path=None, model_name="gemini-1.5-flash", api_key=None):

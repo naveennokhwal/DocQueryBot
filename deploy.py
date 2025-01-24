@@ -6,16 +6,18 @@ import os
 import tempfile
 import streamlit as st
 from models.agent import Agent
+from dotenv import load_dotenv
 
-# Add the sibling folder to sys.path
+# Load environment variables from .env file
+load_dotenv()
 
 # Temporary storage for uploaded files and API key
 TEMP_PDF_DIR = tempfile.mkdtemp()
 CURRENT_PDF_PATH = None
 CURRENT_API_KEY = None
 
-# Default API Key (hidden from the user)
-DEFAULT_API_KEY = "AIzaSyCrptnSuZp6kGOAXBcVsPzagiDCG4ZYst4"  # Replace with your actual API key
+# Default API Key (from .env file)
+DEFAULT_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Streamlit app setup
 st.set_page_config(page_title="DocQueryBot", layout="wide")
@@ -42,7 +44,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🤖 DocQueryBot")
+st.title("DocQueryBot")
 st.write("Interact with your PDF as if you're chatting with it. Upload a PDF, set your API key, and start the conversation.")
 
 # File upload section
@@ -79,10 +81,13 @@ else:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Display chat history directly without a container
-    for speaker, message in st.session_state.chat_history:
-        class_name = "stChatMessageUser" if speaker == "user" else "stChatMessageBot"
-        st.markdown(f'<div class="stChatMessage {class_name}">{message}</div>', unsafe_allow_html=True)
+    # Display chat history using containers
+    with st.container():
+        for speaker, message in st.session_state.chat_history:
+            if speaker == "user":
+                st.markdown(f'<div class="stChatMessage stChatMessageUser">{message}</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="stChatMessage stChatMessageBot">{message}</div>', unsafe_allow_html=True)
 
     # Chat input at the bottom
     user_input = st.text_input("Type your question here:", key="chat_input", placeholder="Ask me anything about the PDF...")

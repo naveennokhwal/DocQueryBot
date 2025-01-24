@@ -14,6 +14,9 @@ TEMP_PDF_DIR = tempfile.mkdtemp()
 CURRENT_PDF_PATH = None
 CURRENT_API_KEY = None
 
+# Default API Key (hidden from the user)
+DEFAULT_API_KEY = "AIzaSyCrptnSuZp6kGOAXBcVsPzagiDCG4ZYst4"  # Replace with your actual API key
+
 # Streamlit app setup
 st.set_page_config(page_title="DocQueryBot", layout="wide")
 st.markdown("""
@@ -53,13 +56,18 @@ if uploaded_file:
     st.sidebar.success(f"PDF uploaded successfully: {uploaded_file.name}")
 
 # API key input section
-CURRENT_API_KEY = st.sidebar.text_input("Enter your API Key", type="password")
-if st.sidebar.button("Set API Key"):
-    if not CURRENT_API_KEY or len(CURRENT_API_KEY) < 10:
-        st.sidebar.error("Invalid API key. Please enter a valid key.")
-    else:
-        os.environ['GEMINI_API_KEY'] = CURRENT_API_KEY
-        st.sidebar.success("API key set successfully.")
+use_default_key = st.sidebar.checkbox("Use Default API Key", value=True)
+if use_default_key:
+    CURRENT_API_KEY = DEFAULT_API_KEY
+    st.sidebar.success("Using default API key.")
+else:
+    CURRENT_API_KEY = st.sidebar.text_input("Enter your API Key", type="password")
+    if st.sidebar.button("Set API Key"):
+        if not CURRENT_API_KEY or len(CURRENT_API_KEY) < 10:
+            st.sidebar.error("Invalid API key. Please enter a valid key.")
+        else:
+            os.environ['GEMINI_API_KEY'] = CURRENT_API_KEY
+            st.sidebar.success("API key set successfully.")
 
 # Chat interface
 st.subheader("Chat with DocQueryBot")
